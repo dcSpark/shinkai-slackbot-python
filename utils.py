@@ -9,8 +9,6 @@ class PersistentStorage:
 async def post_data(input: str, path: str) -> dict:
     try:
         url = f"{os.getenv('SHINKAI_NODE_URL')}{path}"
-        print(url)
-        print(input)
         headers = {'Content-Type': 'application/json'} 
         response = requests.post(url, data=input, headers=headers)
         print(response.text)

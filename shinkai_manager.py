@@ -55,7 +55,7 @@ class ShinkaiManager:
         self.archive_jobs_analytics: Optional[List[ArchiveJobsAnalytics]] = []
 
     async def build_job_message(self, message_content: str, job_id: str) -> Any:
-        return await PyShinkaiMessageBuilder.job_message(
+        return PyShinkaiMessageBuilder.job_message(
             job_id,
             message_content,
             "",
@@ -71,23 +71,8 @@ class ShinkaiManager:
 
     async def build_create_job(self, agent: str) -> PyShinkaiMessage:
         try:
-            # simple job_creation creates message that is unencrypted (commented for now, to be removed)
             job_scope = PyJobScope()
-
-            # try 1:
-            # return PyShinkaiMessageBuilder.job_creation(
-            # try 2: 
-            print("Encryption Secret Key:", self.encryption_secret_key)
-            print("Signature Secret Key:", self.signature_secret_key)
-            print("Receiver Public Key:", self.receiver_public_key)
-            print("Job Scope:", job_scope)
-            print("Encryption Flag:", False)
-            print("Shinkai Name:", self.shinkai_name)
-            print("Profile Name:", self.profile_name)
-            print("Device Name:", self.shinkai_name)  # Assuming this was intended to be device_name
-            print("Agent:", agent)
-
-            
+         
             return PyShinkaiMessageBuilder.job_creation_encrypted(
                 self.encryption_secret_key,
                 self.signature_secret_key,
@@ -100,26 +85,6 @@ class ShinkaiManager:
                 agent
             )
 
-            # create custom shinkai message has default encryption using DiffieHellmanChaChaPoly1305
-            # schema = PyMessageSchemaType("JobCreationSchema")
-            # data = json.dumps({
-            #     "job_id": "",
-            #     "content": "",
-            #     "files_inbox": ""
-            # })
-            # return PyShinkaiMessageBuilder.create_custom_shinkai_message_to_node(
-            #     self.encryption_secret_key,
-            #     self.signature_secret_key,
-            #     self.receiver_public_key,
-            #     data,
-            #     self.shinkai_name,
-            #     self.profile_name, # sender_subidentity
-            #     self.shinkai_name, # recipient
-            #     agent, # recipient_subidentity
-            #     "", # other
-            #     schema
-            # )
-
         except Exception as e:
             print(f"Error on job_creation: {str(e)}")
         return None
@@ -127,10 +92,10 @@ class ShinkaiManager:
     async def send_message(self, content: str, job_id: str) -> Any:
         message_job = await self.build_job_message(content, job_id)
         resp = await post_data(message_job, "/v1/job_message")
-        if resp["status"] == "success":
+        if resp["status"] == "Success":
             return resp["data"]
         else:
-            raise Exception(f"Job creation failed:: {resp}")
+            raise Exception(f"Job creation failed: {resp}")
 
     # commented code to be fixed
     # async def get_messages(self, job_id: str) -> str:
@@ -153,11 +118,9 @@ class ShinkaiManager:
     async def create_job(self, agent: str) -> str:
 
         job_message = await self.build_create_job(agent)
-        print(job_message)
 
         endpoint_job = "/v1/create_job"
         resp = await post_data(job_message, endpoint_job)
-        print(resp)
         if resp["status"] == "success":
             return resp["data"]
         else:
