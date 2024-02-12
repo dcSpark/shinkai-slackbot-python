@@ -1,6 +1,7 @@
 import asyncio
 import os
 import requests
+import json 
 
 class PersistentStorage:
     ThreadJobMapping = "ThreadJobMapping"
@@ -10,7 +11,8 @@ async def post_data(input: str, path: str) -> dict:
         url = f"{os.getenv('SHINKAI_NODE_URL')}{path}"
         print(url)
         print(input)
-        response = requests.post(url, data=input)
+        headers = {'Content-Type': 'application/json'} 
+        response = requests.post(url, data=input, headers=headers)
         print(response.text)
         return response.json()
     except Exception as error:

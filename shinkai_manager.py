@@ -70,36 +70,55 @@ class ShinkaiManager:
         )
 
     async def build_create_job(self, agent: str) -> PyShinkaiMessage:
-
         try:
             # simple job_creation creates message that is unencrypted (commented for now, to be removed)
-            # job_scope = PyJobScope()
-            # return PyShinkaiMessageBuilder.job_creation(
-            #     self.encryption_secret_key,
-            #     self.signature_secret_key,
-            #     self.receiver_public_key,
-            #     job_scope,
-            #     False,
-            #     self.shinkai_name,
-            #     self.profile_name,
-            #     self.shinkai_name,
-            #     agent
-            # )
+            job_scope = PyJobScope()
 
-            # create custom shinkai message has default encryption using DiffieHellmanChaChaPoly1305
-            schema = PyMessageSchemaType("JobMessageSchema")
-            return PyShinkaiMessageBuilder.create_custom_shinkai_message_to_node(
+            # try 1:
+            # return PyShinkaiMessageBuilder.job_creation(
+            # try 2: 
+            print("Encryption Secret Key:", self.encryption_secret_key)
+            print("Signature Secret Key:", self.signature_secret_key)
+            print("Receiver Public Key:", self.receiver_public_key)
+            print("Job Scope:", job_scope)
+            print("Encryption Flag:", False)
+            print("Shinkai Name:", self.shinkai_name)
+            print("Profile Name:", self.profile_name)
+            print("Device Name:", self.shinkai_name)  # Assuming this was intended to be device_name
+            print("Agent:", agent)
+
+            
+            return PyShinkaiMessageBuilder.job_creation_encrypted(
                 self.encryption_secret_key,
                 self.signature_secret_key,
                 self.receiver_public_key,
-                "message1",
+                job_scope,
+                False,
                 self.shinkai_name,
-                "",
+                self.profile_name,
                 self.shinkai_name,
-                agent,
-                "",
-                schema
+                agent
             )
+
+            # create custom shinkai message has default encryption using DiffieHellmanChaChaPoly1305
+            # schema = PyMessageSchemaType("JobCreationSchema")
+            # data = json.dumps({
+            #     "job_id": "",
+            #     "content": "",
+            #     "files_inbox": ""
+            # })
+            # return PyShinkaiMessageBuilder.create_custom_shinkai_message_to_node(
+            #     self.encryption_secret_key,
+            #     self.signature_secret_key,
+            #     self.receiver_public_key,
+            #     data,
+            #     self.shinkai_name,
+            #     self.profile_name, # sender_subidentity
+            #     self.shinkai_name, # recipient
+            #     agent, # recipient_subidentity
+            #     "", # other
+            #     schema
+            # )
 
         except Exception as e:
             print(f"Error on job_creation: {str(e)}")
@@ -134,7 +153,6 @@ class ShinkaiManager:
     async def create_job(self, agent: str) -> str:
 
         job_message = await self.build_create_job(agent)
-
         print(job_message)
 
         endpoint_job = "/v1/create_job"
