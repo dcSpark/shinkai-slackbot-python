@@ -1,4 +1,5 @@
 from server import create_app
+from slack import SlackBot
 import uvicorn
 import asyncio
 from dotenv import load_dotenv
@@ -27,8 +28,11 @@ async def main():
     config = uvicorn.Config(app=app, host="0.0.0.0", port=3001, reload=True)
     server = uvicorn.Server(config)
 
+    slack_bot = SlackBot()
+
     # Create a task for shinkai_manager's background operations
-    task = asyncio.create_task(shinkai_manager.get_node_responses())
+    # task = asyncio.create_task(shinkai_manager.get_node_responses()) # use only for testing api without slack
+    task = asyncio.create_task(shinkai_manager.get_node_responses(slack_bot=slack_bot))
 
     # Run both the server and the background task concurrently
     await asyncio.gather(server.serve(), task)

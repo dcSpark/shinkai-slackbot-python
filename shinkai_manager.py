@@ -112,13 +112,11 @@ class ShinkaiManager:
                 agent,
                 None)
             
-            print(inbox)
             job_message_dict = json.loads(inbox)
 
             print("/v1/last_messages_from_inbox")
             resp = await post_data(json.dumps(job_message_dict), "/v1/last_messages_from_inbox")
 
-            print(resp["data"])
             if len(resp["data"]) == 1:
                 print("There's no answer available yet.")
                 return ""
@@ -144,7 +142,6 @@ class ShinkaiManager:
 
     async def get_node_responses(self, slack_bot=None) -> Optional[str]:
         while True:
-            print(len(self.active_jobs))
             if len(self.active_jobs) == 0:
                 await asyncio.sleep(1)
                 continue
@@ -153,7 +150,6 @@ class ShinkaiManager:
                 print(f"checking node responses for {job.shinkai_job_id}")
                 try:
                     node_response = await self.get_messages(job.shinkai_job_id, "main/agent/my_gpt")
-                    print(node_response)
                     was_message_posted_in_external_service = True
                     if node_response:
                         if slack_bot is not None:
