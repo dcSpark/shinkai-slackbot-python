@@ -3,7 +3,7 @@ import asyncio
 import json
 from uuid import uuid4
 from utils import delay, post_data
-from datetime import datetime
+from datetime import datetime, time
 # from .slack import SlackBot
 from shinkai_message_pyo3 import (
     PyShinkaiMessageBuilder,
@@ -98,22 +98,38 @@ class ShinkaiManager:
             raise Exception(f"Job creation failed: {resp}")
 
     # commented code to be fixed
-    # async def get_messages(self, job_id: str) -> str:
-    #     try:
-    #         inbox = PyInboxName.get_job_inbox_name_from_params(job_id).value
-    #         message = await self.build_get_messages_for_inbox(inbox)
-    #         resp = await post_data(message, "/v1/last_messages_from_inbox")
-    #         if len(resp["data"]) == 1:
-    #             print("There's no answer available yet.")
-    #             return ""
-    #         latest_message = resp["data"][-1]
-    #         is_job_message = latest_message["body"]["unencrypted"]["message_data"]["unencrypted"]["message_content_schema"] == MessageSchemaType.JobMessageSchema and latest_message["body"]["unencrypted"]["internal_metadata"]["sender_subidentity"] == ""
-    #         if is_job_message:
-    #             parsed_message = json.loads(latest_message["body"]["unencrypted"]["message_data"]["unencrypted"]["message_raw_content"])
-    #             return parsed_message.get("content", "")
-    #     except Exception as e:
-    #         print(f"Error getting messages for job {job_id}: {str(e)}")
-    #     return ""
+    async def get_messages(self, job_id: str, agent: str) -> str:
+        try:
+            inbox = PyShinkaiMessageBuilder.get_last_messages_from_inbox( 
+                self.encryption_secret_key,
+                self.signature_secret_key,
+                self.receiver_public_key,
+                "job_inbox::" + job_id + "::false",
+                10,
+                self.shinkai_name,
+                self.profile_name,
+                self.shinkai_name,
+                agent,
+                None)
+            
+            print(inbox)
+            job_message_dict = json.loads(inbox)
+
+            print("/v1/last_messages_from_inbox")
+            resp = await post_data(json.dumps(job_message_dict), "/v1/last_messages_from_inbox")
+
+            print(resp["data"])
+            if len(resp["data"]) == 1:
+                print("There's no answer available yet.")
+                return ""
+            latest_message = resp["data"][-1]
+            is_job_message = latest_message["body"]["unencrypted"]["message_data"]["unencrypted"]["message_content_schema"] == "JobMessageSchema" and latest_message["body"]["unencrypted"]["internal_metadata"]["sender_subidentity"] == ""
+            if is_job_message:
+                parsed_message = json.loads(latest_message["body"]["unencrypted"]["message_data"]["unencrypted"]["message_raw_content"])
+                return parsed_message.get("content", "")
+        except Exception as e:
+            print(f"Error getting messages for job {job_id}: {str(e)}")
+        return ""
 
     async def create_job(self, agent: str) -> str:
 
@@ -126,30 +142,38 @@ class ShinkaiManager:
         else:
             raise Exception(f"Job creation failed: {resp}")
 
-    # async def get_node_responses(self, slack_bot: Optional[SlackBot] = None) -> Optional[str]:
-    #     while True:
-    #         if not self.active_jobs:
-    #             await asyncio.sleep(1)
-    #             continue
-    #         print(f"Number of active jobs awaiting for response: {len(self.active_jobs)}")
-    #         for job in self.active_jobs:
-    #             try:
-    #                 node_response = await self.get_messages(job.shinkai_job_id)
-    #                 if node_response:
-    #                     if slack_bot:
-    #                         slack_message_response = await slack_bot.post_message_to_thread(job.slack_channel_id, job.slack_thread_id, node_response)
-    #                         if slack_message_response["ok"]:
-    #                             self.active_jobs = [j for j in self.active_jobs if j.shinkai_job_id != job.shinkai_job_id]
-    #                             job_analytics = JobAnalytics(job.shinkai_job_id, job.message, int((time.time() - (job.start_timestamp or 0)) / 1000), node_response)
-    #                             print(job_analytics)
-    #                             existing_parent_index = next((i for i, analytics in enumerate(self.archive_jobs_analytics) if analytics.parent_job.job_id == job.shinkai_job_id), -1)
-    #                             if existing_parent_index != -1:
-    #                                 self.archive_jobs_analytics[existing_parent_index].following_jobs.append(job_analytics)
-    #                             else:
-    #                                 self.archive_jobs_analytics.append(ArchiveJobsAnalytics(parent_job=job_analytics, following_jobs=[]))
-    #             except Exception as e:
-    #                 print(f"Response for job_id: {job.shinkai_job_id} not available: {str(e)}")
-    #         await asyncio.sleep(1)
+    async def get_node_responses(self, slack_bot=None) -> Optional[str]:
+        while True:
+            print(len(self.active_jobs))
+            if len(self.active_jobs) == 0:
+                await asyncio.sleep(1)
+                continue
+            print(f"Number of active jobs awaiting for response: {len(self.active_jobs)}")
+            for job in self.active_jobs:
+                print(f"checking node responses for {job.shinkai_job_id}")
+                try:
+                    node_response = await self.get_messages(job.shinkai_job_id, "main/agent/my_gpt")
+                    print(node_response)
+                    was_message_posted_in_external_service = True
+                    if node_response:
+                        if slack_bot is not None:
+                            was_message_posted_in_external_service = False
+                            slack_message_response = await slack_bot.post_message_to_thread(job.slack_channel_id, job.slack_thread_id, node_response)
+                            if slack_message_response.get("ok"):
+                                was_message_posted_in_external_service = True
+                        if was_message_posted_in_external_service:
+                            self.active_jobs = [j for j in self.active_jobs if j.shinkai_job_id != job.shinkai_job_id]
+
+                            # we dont need analytics for now
+                            # job_analytics = JobAnalytics(job.shinkai_job_id, job.message, int((datetime.now().timestamp() - (job.start_timestamp or 0)) / 1000), node_response)
+                            # existing_parent_index = next((i for i, analytics in enumerate(self.archive_jobs_analytics) if analytics.parent_job.job_id == job.shinkai_job_id), -1)
+                            # if existing_parent_index != -1:
+                            #     self.archive_jobs_analytics[existing_parent_index].following_jobs.append(job_analytics)
+                            # else:
+                            #     self.archive_jobs_analytics.append(ArchiveJobsAnalytics(parent_job=job_analytics, following_jobs=[]))
+                except Exception as e:
+                    print(f"Response for job_id: {job.shinkai_job_id} not available: {str(e)}")
+            await asyncio.sleep(1)
 
     async def create_job_and_send(self, message: str, existing_job_id: Optional[str] = None) -> Optional[str]:
         agent = "main/agent/my_gpt"
@@ -162,6 +186,9 @@ class ShinkaiManager:
             answer = await self.send_message(message, job_id)
             self.active_jobs.append(SlackJobAssigned(message=message, shinkai_job_id=job_id, start_timestamp=int(datetime.now().timestamp())))
             print(f"### Answer: {answer}")
+
+            print(self.active_jobs)
+            print("Active Jobs:", self.active_jobs) 
             return job_id
         except Exception as e:
             print(f"Error creating job and sending message: {str(e)}")
