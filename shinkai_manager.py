@@ -141,7 +141,8 @@ class ShinkaiManager:
             raise Exception(f"Job creation failed: {resp}")
 
     async def get_node_responses(self, slack_bot=None) -> Optional[str]:
-        while True:
+        from main import shutdown_event
+        while not shutdown_event.is_set():
             if len(self.active_jobs) == 0:
                 await asyncio.sleep(1)
                 continue
@@ -160,14 +161,6 @@ class ShinkaiManager:
                                 was_message_posted_in_external_service = True
                         if was_message_posted_in_external_service:
                             self.active_jobs = [j for j in self.active_jobs if j.shinkai_job_id != job.shinkai_job_id]
-
-                            # we dont need analytics for now
-                            # job_analytics = JobAnalytics(job.shinkai_job_id, job.message, int((datetime.now().timestamp() - (job.start_timestamp or 0)) / 1000), node_response)
-                            # existing_parent_index = next((i for i, analytics in enumerate(self.archive_jobs_analytics) if analytics.parent_job.job_id == job.shinkai_job_id), -1)
-                            # if existing_parent_index != -1:
-                            #     self.archive_jobs_analytics[existing_parent_index].following_jobs.append(job_analytics)
-                            # else:
-                            #     self.archive_jobs_analytics.append(ArchiveJobsAnalytics(parent_job=job_analytics, following_jobs=[]))
                 except Exception as e:
                     print(f"Response for job_id: {job.shinkai_job_id} not available: {str(e)}")
             await asyncio.sleep(1)

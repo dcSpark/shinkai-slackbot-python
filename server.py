@@ -37,6 +37,11 @@ signature_verifier = SignatureVerifier(signing_secret=os.getenv("SLACK_SIGNING_S
 app = FastAPI()
 
 
+@app.on_event("shutdown")
+async def app_shutdown():
+    from main import shutdown_event
+    shutdown_event.set()
+
 # Global variable to store thread to job mapping (this can be initialized to {} or loaded from file if file was created)
 thread_job_mapping: Dict[str, str] = load_thread_job_mapping()
 
@@ -72,14 +77,10 @@ def init_routes(app: FastAPI):
             event_time = json_data.get("event_time")
             if event_time in seen_event_times:
                 print(f"Duplicate event detected: {event_time}, skipping processing.")
-                return response
+                return JSONResponse(content={"status": "ok"}, status_code=200)
             else:
                 seen_event_times.add(event_time)
                 print(f"Processing new event: {event_time}")
-
-            # if we don't send 200 immediately, then Slack itself sends duplicated messages (there's no way to configure it on Slack settings)
-            response = JSONResponse(content={})
-            response.status_code = 200
 
             event = json_data.get("event", {})
             if event.get("type") == "app_mention" and "text" in event and json_data.get("api_app_id") == os.getenv("SLACK_APP_ID"):
@@ -107,22 +108,21 @@ def init_routes(app: FastAPI):
 
                         # make thread_job_mapping persistent update it here
                         save_thread_job_mapping(thread_job_mapping)
-
+                        
                     print(f"### Job ID: {job_id}")
-
-                    app.state.shinkai_manager.active_jobs.append(SlackJobAssigned(message=message, shinkai_job_id=job_id, slack_thread_id=thread_id, slack_channel_id=event.get("channel"), start_timestamp=int(datetime.now().timestamp())))
 
                     # send job message to the node
                     answer = await app.state.shinkai_manager.send_message(message, job_id)
-                    # self.active_jobs.append(SlackJobAssigned(message=message, shinkai_job_id=job_id, start_timestamp=int(datetime.now().timestamp())))
+
+                    app.state.shinkai_manager.active_jobs.append(SlackJobAssigned(message=message, shinkai_job_id=job_id, slack_thread_id=thread_id, slack_channel_id=event.get("channel"), start_timestamp=int(datetime.now().timestamp())))
+                    
                     print(f"### Answer: {answer}")
                 else:
                     raise ValueError(f"{message} was not provided. Nothing to pass to the node.")
-            return response
+            return JSONResponse(content={"status": "ok"}, status_code=200)
         except Exception as e:
             print(e)
             return JSONResponse(content={"status": "error", "message": str(e)}, status_code=400)
-        return {"status": "success", "message": "Shinkai Slack backend is up and running."}
 
     @app.get("/health")
     async def health_check():
