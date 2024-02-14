@@ -19,11 +19,11 @@ class SlackBot:
             print(f"Error posting message to channel: {e.response['error']}")
 
     async def post_message_to_thread(self, channel_id, thread_ts, text):
-
         try:
-            response = await self.client.chat_postMessage(channel=channel_id, thread_ts=thread_ts, text=text)
+            response = self.client.chat_postMessage(channel=channel_id, thread_ts=thread_ts, text=text)
             if response["ok"]:
-                print(f"Response from the node: {text} posted to channelId: {channel_id} successfully.")
+                print(f"Response from the node: {text}; posted to channelId: {channel_id} successfully.")
+                print(f"message sent to Slack")
             return response
         except SlackApiError as e:
             print(f"Error posting message to thread: {e.response['error']}")

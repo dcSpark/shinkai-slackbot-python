@@ -37,6 +37,7 @@ app = FastAPI()
 # Global variable to store thread to job mapping
 thread_job_mapping: Dict[str, str] = {}
 
+
 # Modify the FastAPI app initialization to accept ShinkaiManager instance:
 def create_app(shinkai_manager: ShinkaiManager):
     app.add_middleware(
@@ -60,10 +61,23 @@ def init_routes(app: FastAPI):
             # URL Verification (important for slack setup)
             if "challenge" in json_data:
                 return {"challenge": json_data["challenge"]}
+            
+            global seen_event_times
+            if 'seen_event_times' not in globals():
+                seen_event_times = set()
+
+            event_time = json_data.get("event_time")
+            if event_time in seen_event_times:
+                print(f"Duplicate event detected: {event_time}, skipping processing.")
+                return response
+            else:
+                seen_event_times.add(event_time)
+                print(f"Processing new event: {event_time}")
 
             # if we don't send 200 immediately, then Slack itself sends duplicated messages (there's no way to configure it on Slack settings)
             response = JSONResponse(content={})
             response.status_code = 200
+
 
             event = json_data.get("event", {})
             if event.get("type") == "app_mention" and "text" in event and json_data.get("api_app_id") == os.getenv("SLACK_APP_ID"):
@@ -83,7 +97,7 @@ def init_routes(app: FastAPI):
                         job_id = existing_job_id
                     else:
                         # create shinkai job
-                        print("Creating job id")
+                        print("Creating job id...")
                         job_id = await app.state.shinkai_manager.create_job("main/agent/my_gpt")
 
                         # assign job id for the future

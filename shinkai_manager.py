@@ -114,12 +114,12 @@ class ShinkaiManager:
             
             job_message_dict = json.loads(inbox)
 
-            print("/v1/last_messages_from_inbox")
             resp = await post_data(json.dumps(job_message_dict), "/v1/last_messages_from_inbox")
 
-            if len(resp["data"]) == 1:
+            if len(resp["data"]) == 1 or len(resp["data"]) == 0:
                 print("There's no answer available yet.")
                 return ""
+            
             latest_message = resp["data"][-1]
             is_job_message = latest_message["body"]["unencrypted"]["message_data"]["unencrypted"]["message_content_schema"] == "JobMessageSchema" and latest_message["body"]["unencrypted"]["internal_metadata"]["sender_subidentity"] == ""
             if is_job_message:
@@ -150,6 +150,7 @@ class ShinkaiManager:
                 print(f"checking node responses for {job.shinkai_job_id}")
                 try:
                     node_response = await self.get_messages(job.shinkai_job_id, "main/agent/my_gpt")
+                    print(node_response)
                     was_message_posted_in_external_service = True
                     if node_response:
                         if slack_bot is not None:
@@ -180,10 +181,7 @@ class ShinkaiManager:
                 job_id = existing_job_id
             print(f"### Job ID: {job_id}")
             answer = await self.send_message(message, job_id)
-            self.active_jobs.append(SlackJobAssigned(message=message, shinkai_job_id=job_id, start_timestamp=int(datetime.now().timestamp())))
-            print(f"### Answer: {answer}")
-
-            print(self.active_jobs)
+            self.active_jobs.append(SlackJobAssigned(message=message, shinkai_job_id=job_id, start_timestamp=int(datetime.now().timestamp()))) 
             print("Active Jobs:", self.active_jobs) 
             return job_id
         except Exception as e:
