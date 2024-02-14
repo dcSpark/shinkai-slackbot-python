@@ -12,7 +12,9 @@ import hashlib
 import hmac
 from typing import Optional, Dict, Any, List
 from pydantic import BaseModel
+import json
 
+from utils import load_thread_job_mapping, save_thread_job_mapping
 
 class SlackEventApiRequestBodyContent(BaseModel):
     type: str
@@ -34,8 +36,9 @@ signature_verifier = SignatureVerifier(signing_secret=os.getenv("SLACK_SIGNING_S
 
 app = FastAPI()
 
-# Global variable to store thread to job mapping
-thread_job_mapping: Dict[str, str] = {}
+
+# Global variable to store thread to job mapping (this can be initialized to {} or loaded from file if file was created)
+thread_job_mapping: Dict[str, str] = load_thread_job_mapping()
 
 
 # Modify the FastAPI app initialization to accept ShinkaiManager instance:
@@ -78,7 +81,6 @@ def init_routes(app: FastAPI):
             response = JSONResponse(content={})
             response.status_code = 200
 
-
             event = json_data.get("event", {})
             if event.get("type") == "app_mention" and "text" in event and json_data.get("api_app_id") == os.getenv("SLACK_APP_ID"):
                 # cleanup the message (there's <@USER_APP_ID> as a prefix added each time we send something)
@@ -103,7 +105,8 @@ def init_routes(app: FastAPI):
                         # assign job id for the future
                         thread_job_mapping[thread_id] = job_id
 
-                        # TODO: make thread_job_mapping persistent update it here
+                        # make thread_job_mapping persistent update it here
+                        save_thread_job_mapping(thread_job_mapping)
 
                     print(f"### Job ID: {job_id}")
 

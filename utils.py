@@ -1,3 +1,4 @@
+from typing import Optional, Dict
 import asyncio
 import os
 import requests
@@ -21,3 +22,14 @@ async def post_data(input: str, path: str) -> dict:
 
 async def delay(ms: int):
     await asyncio.sleep(ms / 1000)
+
+def save_thread_job_mapping(mapping: Dict[str, str], filename: str = 'thread_job_mapping.json'):
+    with open(filename, 'w') as file:
+        json.dump(mapping, file)
+
+def load_thread_job_mapping(filename: str = 'thread_job_mapping.json') -> Dict[str, str]:
+    try:
+        with open(filename, 'r') as file:
+            return json.load(file)
+    except FileNotFoundError:
+        return {} 
