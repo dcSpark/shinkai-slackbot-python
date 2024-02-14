@@ -1,3 +1,4 @@
+import asyncio
 import pytest
 from fastapi.testclient import TestClient
 from server import create_app
@@ -23,37 +24,35 @@ async def test_health_check_endpoint():
     response = client.get("/health")
     assert response.status_code == 200
     assert response.json() == {"status": "success", "message": "Shinkai Slack backend is up and running."}
-    
-# @pytest.mark.asyncio
-# async def test_trigger_slack_endpoint_with_ai_prompts():
-#     prompts = [
-#         "What is the meaning of life?",
-#         "Explain the theory of relativity",
-#     ]
 
-#     slack_bot = SlackBot()
+@pytest.mark.asyncio
+async def test_trigger_slack_endpoint_with_ai_prompts():
+    prompts = [
+        "What is the meaning of life?",
+        "Explain the theory of relativity",
+    ]
 
-#     pending_messages_after = len(shinkai_manager.active_jobs)
-#     for prompt in prompts:
-#         pending_messages_before = len(shinkai_manager.active_jobs)
-#         # Trigger slack endpoint with the prompt
-#         response = client.post("/slack", json={
-#             "text": prompt,
-#             "channel_id": "questions",
-#         })
-#         assert response.status_code == 200
+    task = asyncio.create_task(shinkai_manager.get_node_responses())
 
-#         # Verify if message was added
-#         pending_messages_after = len(shinkai_manager.active_jobs)
+    pending_messages_after = len(shinkai_manager.active_jobs)
+    for prompt in prompts:
+        pending_messages_before = len(shinkai_manager.active_jobs)
+        await shinkai_manager.create_job_and_send(prompt)
 
-#         # Ensure that the number of pending messages is not increasing unexpectedly
-#         assert pending_messages_before <= pending_messages_after
+        pending_messages_after = len(shinkai_manager.active_jobs)
+        print(pending_messages_before)
+        print(pending_messages_after)
 
-#     await shinkai_manager.get_node_responses(slack_bot)
+    await delay(30)
 
-#     await delay(30)
+    print(pending_messages_before)
+    print(pending_messages_after)
 
-#     still_pending_messages = len(shinkai_manager.active_jobs)
-#     assert still_pending_messages < pending_messages_after
+    # Ensure that the number of pending messages is not increasing unexpectedly
+    assert pending_messages_before <= pending_messages_after
+    task.cancel()
+    loop = asyncio.get_running_loop()
+    loop.stop()     
+
 
 

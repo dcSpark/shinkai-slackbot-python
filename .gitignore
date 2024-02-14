@@ -161,3 +161,4 @@ cython_debug/
 
 thread_job_mapping.json
 libs
+.DS_STORE

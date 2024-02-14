@@ -174,8 +174,10 @@ class ShinkaiManager:
                 job_id = existing_job_id
             print(f"### Job ID: {job_id}")
             answer = await self.send_message(message, job_id)
+
             self.active_jobs.append(SlackJobAssigned(message=message, shinkai_job_id=job_id, start_timestamp=int(datetime.now().timestamp()))) 
             print("Active Jobs:", self.active_jobs) 
+            
             return job_id
         except Exception as e:
             print(f"Error creating job and sending message: {str(e)}")
