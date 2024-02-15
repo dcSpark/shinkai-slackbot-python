@@ -40,8 +40,6 @@ async def test_trigger_slack_endpoint_with_ai_prompts():
         await shinkai_manager.create_job_and_send(prompt)
 
         pending_messages_after = len(shinkai_manager.active_jobs)
-        print(pending_messages_before)
-        print(pending_messages_after)
 
     await delay(30)
 

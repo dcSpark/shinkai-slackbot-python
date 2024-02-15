@@ -9,7 +9,6 @@ from shinkai_message_pyo3 import (
     PyShinkaiMessageBuilder,
     PyShinkaiMessage,
     PyJobScope,
-    PyMessageSchemaType
 )
 
 class SlackJobAssigned:
@@ -73,7 +72,7 @@ class ShinkaiManager:
         try:
             job_scope = PyJobScope()
          
-            return PyShinkaiMessageBuilder.job_creation_encrypted(
+            return PyShinkaiMessageBuilder.job_creation(
                 self.encryption_secret_key,
                 self.signature_secret_key,
                 self.receiver_public_key,
