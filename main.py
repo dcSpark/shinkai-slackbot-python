@@ -38,9 +38,9 @@ async def main():
     setup_signal_handler()
 
     shinkai_manager = ShinkaiManager(
-        encryption_sk=os.getenv("ENCRYPTION_SK"),
-        signature_sk=os.getenv("SIGNATURE_SK"),
-        receiver_pk=os.getenv("RECEIVER_PK"),
+        encryption_sk=os.getenv("PROFILE_ENCRYPTION_SK"),
+        signature_sk=os.getenv("PROFILE_IDENTITY_SK"),
+        receiver_pk=os.getenv("NODE_ENCRYPTION_PK"),
         shinkai_name=os.getenv("NODE_NAME"),
         profile_name=os.getenv("PROFILE_NAME"),
         device_name=os.getenv("DEVICE_NAME")
