@@ -15,10 +15,10 @@ source venv/bin/activate
 pip install -r requirements.txt
 
 # make sure to install shinkai_message_pyo3-0.1.6-cp38-abi3-macosx_11_0_arm64.whl lib or compile one dedicated for your OS
-pip install shinkai_message_pyo3-0.1.6-cp38-abi3-macosx_11_0_arm64.whl 
+pip install shinkai-lib/shinkai_message_pyo3-0.1.6-cp38-abi3-macosx_11_0_arm64.whl 
 
 # in case the lib needs to be reinstalled, use --force-reinstall
-pip install shinkai_message_pyo3-0.1.6-cp38-abi3-macosx_11_0_arm64.whl --force-reinstall
+pip install shinkai-lib/shinkai_message_pyo3-0.1.6-cp38-abi3-macosx_11_0_arm64.whl --force-reinstall
 
 # to run the service
 python main.py
@@ -51,7 +51,6 @@ The `.env.example` file provides a template for setting up your environment vari
 * `SHINKAI_NODE_URL`: The URL of the Shinkai node. This is typically set to `http://127.0.0.1:9550` for local development.
 
 * `SLACK_BOT_TOKEN`: The token for your Slack bot. This is required for the bot to function.
-* `SLACK_CHANNEL_ID`: The ID of the Slack channel where the bot will operate.
 * `SLACK_SIGNING_SECRET`: The signing secret for your Slack app. This is used to verify that incoming requests from Slack are legitimate. It's available from your Slack app's "Basic Information" page under "App Credentials". **This is optional parameter in case `/slack` endpoint is going to be used. Otherwise, feel free to skip it**
 
 * `PORT`: The port on which your service will run. The default is `3001`.
