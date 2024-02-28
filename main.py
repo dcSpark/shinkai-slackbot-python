@@ -6,7 +6,6 @@ from dotenv import load_dotenv
 import os
 from shinkai_manager import ShinkaiManager
 import signal
-import time
 
 shutdown_event = asyncio.Event()
 
@@ -50,7 +49,6 @@ async def main():
     app = create_app(shinkai_manager)
 
     # Note: uvicorn.run() is blocking, so we use it in a separate thread or use uvicorn's Server programmatically
-
     config = uvicorn.Config(app=app, host="0.0.0.0", port=3001, reload=True, loop="auto")
     server = uvicorn.Server(config)
 

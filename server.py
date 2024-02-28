@@ -126,18 +126,7 @@ def init_routes(app: FastAPI):
 
     @app.get("/health")
     async def health_check():
-        # TODO: verify node availability
         return {"status": "success", "message": "Shinkai Slack backend is up and running."}
-
-    # wip - endpoint to make sure basic node operations work
-    @app.get("/create-and-send")
-    async def create_and_send():
-        shinkai_manager = app.state.shinkai_manager
-        job_id = await shinkai_manager.create_job_and_send(message="Who are you?")
-        if job_id:
-            return {"status": "success", "message": f"Job {job_id} created and message sent."}
-        else:
-            return {"status": "error", "message": "Failed to create job and send message."}
 
 
 

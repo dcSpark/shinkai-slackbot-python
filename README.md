@@ -1,8 +1,12 @@
 # Shinkai Slack bot Python integration
 
+This repository is dedicated to integrating Slack with the Shinkai backend for a Slack bot. It involves setting up environment variables, deploying the service, and configuring Slack app settings to interact with the Shinkai node. The integration allows for sending messages, creating jobs, and receiving responses from the Shinkai node directly within Slack. This setup is particularly useful for teams looking to streamline their workflow by leveraging the capabilities of Shinkai's backend services through Slack's user-friendly interface.
+
 How to start?
 
 ```bash
+# create virtual environment if one is not created 
+python -m venv venv
 
 # setup `venv` to run stuff 
 source venv/bin/activate
@@ -10,7 +14,7 @@ source venv/bin/activate
 # install packages 
 pip install -r requirements.txt
 
-# make sure to install shinkai_message_pyo3-0.1.6-cp38-abi3-macosx_11_0_arm64.whl lib which is not available in pip yet
+# make sure to install shinkai_message_pyo3-0.1.6-cp38-abi3-macosx_11_0_arm64.whl lib or compile one dedicated for your OS
 pip install shinkai_message_pyo3-0.1.6-cp38-abi3-macosx_11_0_arm64.whl 
 
 # in case the lib needs to be reinstalled, use --force-reinstall
